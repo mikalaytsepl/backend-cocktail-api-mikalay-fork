@@ -20,14 +20,15 @@ services:
       context: .
     ports:
       - ${PORT}:${PORT}
-      - 9229:9229
+      - 9229:9229 # basically useless and even malicious in prod, so not adding in k8s
     env_file:
       - .env
-    environment:
+    environment: # same values as in .env file so don't really do anything
       - PG_HOST=postgres
       - DB_HOST=postgres
-    volumes:
-      - ./:/app
-    command: node ./build/bin/server.js
+#    volumes: for production so image's data is not subsituted by local
+#      - ./:/app
+    command: node ./bin/server.js
 volumes:
   postgres_volume:
+

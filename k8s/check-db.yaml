@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cocktails-db-seed-job
+  labels:
+    stage: production
+    app: cocktails-back-solvro
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    spec:
+      containers:
+      - name: seeder
+        image: mikalaytsepl/cocktail-seeder:latest
+        envFrom:
+          - configMapRef:
+              name: cocktails-app-configmap
+          - secretRef:
+              name: cocktails-app-secret
+        command:
+          - /bin/bash
+          - -c 
+          - |
+            apt-get update -qq && apt-get install -y postgresql >/dev/null
+
+            db_exists=$(psql "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/postgres?sslmode=require" \
+              -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_DATABASE}';")
+
+            if [[ "$db_exists" != "1" ]]; then
+              echo "Database ${DB_DATABASE} does not exist. Creating..."
+              psql "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/postgres?sslmode=require" \
+                -c "CREATE DATABASE ${DB_DATABASE};"
+
+              echo "Running seeders ..."
+              node ace migration:run --force
+              node ace db:seed 
+
+            else
+              echo "Database ${DB_DATABASE} already exists."
+            fi
+
+            
+            echo "jsons are here: $( ls "/app/database/data" )"
+      restartPolicy: Never
