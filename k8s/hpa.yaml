@@ -1,0 +1,23 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cocktails-autoscaler
+spec:
+  horizontal-pod-autoscaler-cpu-initialization-period: 
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: adonis-app-cocktails
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 120 # no need to freak out when it's just pod creating
+
